@@ -5,7 +5,7 @@ This crate provides traits for working with builtin Rust types as geometric prim
 
 # Usage
 
-## [`VecN`] and [`FloatingVecN`]
+## Vectors
 
 [`VecN`] provides basic vector math operations. [`FloatingVecN`] adds some extra methods that only apply to real-valued vectors.
 
@@ -35,13 +35,72 @@ let b = [3.0, 6.0];
 assert_eq!(a.mag(), 5.0);
 assert_eq!(a.dist(b), 2.0);
 ```
+
+## Axis-aligned bounding boxes
+
+[`Aabb`] provides operations for axis-aligned bounding boxes. They consist of an origin and a size.
+
+This trait is implemented for all even-sized scalar arrays up to size 16 and all size 2 arrays of scalar arrays.
+
+### Example
+
+```
+use ndmath::*;
+
+let aabb = [1, 0, 4, 5];
+assert!(aabb.contains([2, 2]));
+assert!(aabb.contains([1, 0]));
+assert!(aabb.contains([5, 5]));
+assert!(!aabb.contains([5, 6]));
+```
+
+## Named dimension traits
+
+There are traits to provide accessors for named dimensional values.
+
+There are 4 traits for vector dimensions:
+- [`XVec`]
+- [`YVec`]
+- [`ZVec`]
+- [`WVec`]
+
+There are 3 traits for axis-aligned bounding box dimensions:
+- [`XAabb`]
+- [`YAabb`]
+- [`ZAabb`]
+
+### Example
+
+```
+use ndmath::*;
+
+let a = [1, 2];
+let b = [3, 4, 5];
+let c = [6, 7, 8, 9];
+assert_eq!(a.x(), 1);
+assert_eq!(a.y(), 2);
+assert_eq!(b.z(), 5);
+assert_eq!(c.w(), 9);
+
+let aabb = [[0, 1, 2], [3, 4, 5]];
+assert_eq!(aabb.left(), 0);
+assert_eq!(aabb.top(), 1);
+assert_eq!(aabb.back(), 2);
+assert_eq!(aabb.right(), 3);
+assert_eq!(aabb.bottom(), 5);
+assert_eq!(aabb.front(), 7);
+assert_eq!(aabb.width(), 3);
+assert_eq!(aabb.height(), 4);
+assert_eq!(aabb.depth(), 5);
+```
 */
 
+mod aabb;
 mod scalar;
 
 use std::ops::Neg;
 
-pub use scalar::{FloatingScalar, Scalar};
+pub use {aabb::*, scalar::*};
 
 /// Trait for basic vector math operations
 pub trait VecN: Sized {
@@ -55,6 +114,10 @@ pub trait VecN: Sized {
     fn dim(&self, dim: usize) -> Self::Scalar;
     /// Get a mutable reference to the value of a dimension
     fn dim_mut(&mut self, dim: usize) -> &mut Self::Scalar;
+    /// Set the value of a dimension
+    fn set_dim(&mut self, dim: usize, val: Self::Scalar) {
+        *self.dim_mut(dim) = val;
+    }
     /// Add to the vector in place
     fn add_assign(&mut self, other: Self) {
         for i in 0..Self::N {
@@ -229,7 +292,7 @@ where
 }
 
 macro_rules! dim_trait {
-    ($doc:literal, $trait:ident, $get:ident, $get_mut:ident, $set:ident, $index:literal, $($size:literal),*) => {
+    ($doc:literal, $trait:ident, $get:ident, $get_mut:ident, $set:ident, $index:literal) => {
         #[doc = $doc]
         pub trait $trait: VecN {
             /// Get the value of the dimension
@@ -242,20 +305,21 @@ macro_rules! dim_trait {
             }
         }
 
-        $(
-            impl<T> $trait for [T; $size] where T: Scalar {
-                fn $get(&self) -> Self::Scalar {
-                    self[$index]
-                }
-                fn $get_mut(&mut self) -> &mut Self::Scalar {
-                    &mut self[$index]
-                }
+        impl<V> $trait for V
+        where
+            V: VecN,
+        {
+            fn $get(&self) -> Self::Scalar {
+                self.dim($index)
             }
-        )*
+            fn $get_mut(&mut self) -> &mut Self::Scalar {
+                self.dim_mut($index)
+            }
+        }
     };
 }
 
-#[rustfmt::skip] dim_trait!("Trait for vectors with an X dimension", XVec, x, x_mut, set_x, 0, 1, 2, 3, 4);
-#[rustfmt::skip] dim_trait!("Trait for vectors with a Y dimension", YVec, y, y_mut, set_y, 1, 2, 3, 4);
-#[rustfmt::skip] dim_trait!("Trait for vectors with a Z dimension", ZVec, z, z_mut, set_z, 2, 3, 4);
-#[rustfmt::skip] dim_trait!("Trait for vectors with a W dimension", WVec, w, w_mut, set_w, 3, 4);
+#[rustfmt::skip] dim_trait!("Trait for vectors with an X dimension", XVec, x, x_mut, set_x, 0);
+#[rustfmt::skip] dim_trait!("Trait for vectors with a Y dimension", YVec, y, y_mut, set_y, 1);
+#[rustfmt::skip] dim_trait!("Trait for vectors with a Z dimension", ZVec, z, z_mut, set_z, 2);
+#[rustfmt::skip] dim_trait!("Trait for vectors with a W dimension", WVec, w, w_mut, set_w, 3);
