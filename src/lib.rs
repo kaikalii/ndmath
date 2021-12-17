@@ -227,3 +227,35 @@ where
         &mut self[dim]
     }
 }
+
+macro_rules! dim_trait {
+    ($doc:literal, $trait:ident, $get:ident, $get_mut:ident, $set:ident, $index:literal, $($size:literal),*) => {
+        #[doc = $doc]
+        pub trait $trait: VecN {
+            /// Get the value of the dimension
+            fn $get(&self) -> Self::Scalar;
+            /// Get a mutable reference to the value of the dimension
+            fn $get_mut(&mut self) -> &mut Self::Scalar;
+            /// Set the value of the dimension
+            fn $set(&mut self, x: Self::Scalar) {
+                *self.$get_mut() = x;
+            }
+        }
+
+        $(
+            impl<T> $trait for [T; $size] where T: Scalar {
+                fn $get(&self) -> Self::Scalar {
+                    self[$index]
+                }
+                fn $get_mut(&mut self) -> &mut Self::Scalar {
+                    &mut self[$index]
+                }
+            }
+        )*
+    };
+}
+
+#[rustfmt::skip] dim_trait!("Trait for vectors with an X dimension", XVec, x, x_mut, set_x, 0, 1, 2, 3, 4);
+#[rustfmt::skip] dim_trait!("Trait for vectors with a Y dimension", YVec, y, y_mut, set_y, 1, 2, 3, 4);
+#[rustfmt::skip] dim_trait!("Trait for vectors with a Z dimension", ZVec, z, z_mut, set_z, 2, 3, 4);
+#[rustfmt::skip] dim_trait!("Trait for vectors with a W dimension", WVec, w, w_mut, set_w, 3, 4);
