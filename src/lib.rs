@@ -19,7 +19,9 @@ use ndmath::*;
 let a = [2, 5];
 let b = [3, -7];
 let c = a.add(b);
+let d = a.neg();
 assert_eq!(c, [5, -2]);
+assert_eq!(d, [-2, -5]);
 
 let a = [1, 2, 3, 4, 5, 6, 7];
 let b = [9, 8, 7, 6, 5, 4, 3];
@@ -187,16 +189,16 @@ pub trait VecN: Sized {
     /// Negate the vector in place
     fn neg_assign(&mut self)
     where
-        Self::Scalar: Neg,
+        Self::Scalar: Neg<Output = Self::Scalar> + std::fmt::Debug,
     {
         for i in 0..Self::N {
-            *self.dim_mut(i) = self.dim(i);
+            *self.dim_mut(i) = -self.dim(i);
         }
     }
     /// Negate the vector
     fn neg(mut self) -> Self
     where
-        Self::Scalar: Neg,
+        Self::Scalar: Neg<Output = Self::Scalar> + std::fmt::Debug,
     {
         self.neg_assign();
         self
