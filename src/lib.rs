@@ -156,7 +156,7 @@ pub trait VecN: Sized {
     /// Divide the vector in place
     fn div_assign(&mut self, by: Self::Scalar) {
         for i in 0..Self::N {
-            *self.dim_mut(i) *= by;
+            *self.dim_mut(i) /= by;
         }
     }
     /// Divide the vector by a scalar value
@@ -178,7 +178,7 @@ pub trait VecN: Sized {
     /// Element-wise divide the vector by another in place
     fn div2_assign(&mut self, other: Self) {
         for i in 0..Self::N {
-            *self.dim_mut(i) *= other.dim(i);
+            *self.dim_mut(i) /= other.dim(i);
         }
     }
     /// Element-wise divide the vector by another
